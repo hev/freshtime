@@ -1,0 +1,22 @@
+{
+  "name": "freshtime",
+  "version": "1.0.0",
+  "module": "src/cli.ts",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "freshtime": "src/cli.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
+  }
+}

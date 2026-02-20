@@ -1,0 +1,13 @@
+{
+  "response": {
+    "id": 12345,
+    "business_memberships": [
+      {
+        "business": {
+          "id": 98765,
+          "account_id": "ABC123"
+        }
+      }
+    ]
+  }
+}

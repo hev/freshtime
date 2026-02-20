@@ -1,0 +1,21 @@
+{
+  "response": {
+    "result": {
+      "time_entries": [
+        { "id": 1, "client_id": 1, "duration": 7200, "started_at": "2026-02-09T09:00:00Z" },
+        { "id": 2, "client_id": 1, "duration": 12600, "started_at": "2026-02-10T10:00:00Z" },
+        { "id": 3, "client_id": 1, "duration": 14400, "started_at": "2026-02-11T08:00:00Z" },
+        { "id": 4, "client_id": 1, "duration": 7200, "started_at": "2026-02-12T09:00:00Z" },
+        { "id": 5, "client_id": 1, "duration": 5400, "started_at": "2026-02-13T13:00:00Z" },
+        { "id": 6, "client_id": 2, "duration": 3600, "started_at": "2026-02-09T14:00:00Z" },
+        { "id": 7, "client_id": 2, "duration": 7200, "started_at": "2026-02-11T09:00:00Z" },
+        { "id": 8, "client_id": 2, "duration": 10800, "started_at": "2026-02-12T10:00:00Z" },
+        { "id": 9, "client_id": 2, "duration": 7200, "started_at": "2026-02-13T08:00:00Z" }
+      ],
+      "page": 1,
+      "pages": 1,
+      "per_page": 100,
+      "total": 9
+    }
+  }
+}
