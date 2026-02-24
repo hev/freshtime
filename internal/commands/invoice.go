@@ -74,7 +74,7 @@ func runInvoice(clientID int, rate, currency string, dryRun bool, notes string) 
 		return err
 	}
 
-	http := api.NewHttpClient(cfg.AccessToken)
+	http := api.NewClient(cfg)
 
 	entries, err := api.ListUnbilledEntries(http, cfg.BusinessID, clientID)
 	if err != nil {

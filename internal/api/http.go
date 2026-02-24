@@ -7,9 +7,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+
+	"github.com/hev/freshtime/internal/config"
 )
 
-const BaseURL = "https://api.freshbooks.com"
+// BaseURL is the base URL for the FreshBooks API. It is a var to allow overriding in tests.
+var BaseURL = "https://api.freshbooks.com"
 
 // ApiError represents a non-2xx response from the FreshBooks API.
 type ApiError struct {
@@ -41,6 +45,59 @@ func NewHttpClient(token string) *HttpClient {
 		token:  token,
 		client: &http.Client{},
 	}
+}
+
+// RefreshAccessToken exchanges a refresh token for new access and refresh tokens.
+func RefreshAccessToken(refreshToken string) (accessToken, newRefreshToken string, err error) {
+	payload, err := json.Marshal(map[string]string{
+		"grant_type":    "refresh_token",
+		"client_id":     os.Getenv("FRESHBOOKS_CLIENT_ID"),
+		"client_secret": os.Getenv("FRESHBOOKS_CLIENT_SECRET"),
+		"refresh_token": refreshToken,
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	resp, err := http.Post(BaseURL+"/auth/oauth/token", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", "", fmt.Errorf("token refresh failed (%d)", resp.StatusCode)
+	}
+
+	var result struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", "", err
+	}
+	return result.AccessToken, result.RefreshToken, nil
+}
+
+// NewClient creates an HttpClient wired with config-aware OAuth token refresh on 401.
+func NewClient(cfg *config.Config) *HttpClient {
+	c := NewHttpClient(cfg.AccessToken)
+	c.SetRefreshFunc(func() (string, error) {
+		if cfg.RefreshToken == "" {
+			return "", fmt.Errorf("no refresh token available. Run `freshtime setup` to re-authenticate")
+		}
+		accessToken, refreshToken, err := RefreshAccessToken(cfg.RefreshToken)
+		if err != nil {
+			return "", err
+		}
+		cfg.AccessToken = accessToken
+		cfg.RefreshToken = refreshToken
+		if err := config.Save(cfg); err != nil {
+			return "", fmt.Errorf("failed to save refreshed tokens: %w", err)
+		}
+		return accessToken, nil
+	})
+	return c
 }
 
 // SetRefreshFunc sets a callback used to refresh the access token on 401.

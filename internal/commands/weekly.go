@@ -128,7 +128,7 @@ func runWeekly(weekOf string, jsonOutput bool) error {
 		return err
 	}
 
-	http := api.NewHttpClient(cfg.AccessToken)
+	http := api.NewClient(cfg)
 
 	ref := time.Now()
 	if weekOf != "" {

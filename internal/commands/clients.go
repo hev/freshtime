@@ -28,7 +28,7 @@ func runClients() error {
 		return err
 	}
 
-	http := api.NewHttpClient(cfg.AccessToken)
+	http := api.NewClient(cfg)
 	clients, err := api.ListClients(http, cfg.AccountID)
 	if err != nil {
 		return err
