@@ -20,6 +20,11 @@ func main() {
 	root.AddCommand(commands.WeeklyCmd())
 	root.AddCommand(commands.ClientsCmd())
 	root.AddCommand(commands.InvoiceCmd())
+	root.AddCommand(commands.InitCmd())
+	root.AddCommand(commands.LogCmd())
+	root.AddCommand(commands.StartCmd())
+	root.AddCommand(commands.StopCmd())
+	root.AddCommand(commands.TimerStatusCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
