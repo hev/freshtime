@@ -27,9 +27,49 @@ export interface HttpClient {
   ): Promise<T[]>;
 }
 
+import { loadConfig, saveConfig } from "../config.ts";
+
 const BASE_URL = "https://api.freshbooks.com";
 
+async function refreshAccessToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
+  const res = await fetch("https://api.freshbooks.com/auth/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      grant_type: "refresh_token",
+      client_id: process.env.FRESHBOOKS_CLIENT_ID,
+      client_secret: process.env.FRESHBOOKS_CLIENT_SECRET,
+      refresh_token: refreshToken,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Token refresh failed (${res.status})`);
+  }
+
+  const data = (await res.json()) as { access_token: string; refresh_token: string };
+  return { access_token: data.access_token, refresh_token: data.refresh_token };
+}
+
 export function createHttpClient(accessToken: string): HttpClient {
+  let currentToken = accessToken;
+  let hasRetried = false;
+
+  async function handleRefresh(): Promise<void> {
+    const config = await loadConfig();
+    if (!config.refresh_token) {
+      throw new AuthError("No refresh token available. Run `freshtime setup` to re-authenticate.");
+    }
+
+    const tokens = await refreshAccessToken(config.refresh_token);
+    currentToken = tokens.access_token;
+    await saveConfig({
+      ...config,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    });
+  }
+
   async function request<T>(
     path: string,
     params?: Record<string, string>
@@ -43,12 +83,22 @@ export function createHttpClient(accessToken: string): HttpClient {
 
     const res = await fetch(url.toString(), {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${currentToken}`,
         "Content-Type": "application/json",
       },
     });
 
     const body = await res.text();
+
+    if (res.status === 401 && !hasRetried) {
+      hasRetried = true;
+      try {
+        await handleRefresh();
+        return request<T>(path, params);
+      } catch {
+        throw new AuthError("Session expired. Run `freshtime setup` to re-authenticate.");
+      }
+    }
 
     if (res.status === 401) {
       throw new AuthError(body);
@@ -70,13 +120,23 @@ export function createHttpClient(accessToken: string): HttpClient {
     const res = await fetch(url.toString(), {
       method,
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${currentToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
 
     const responseBody = await res.text();
+
+    if (res.status === 401 && !hasRetried) {
+      hasRetried = true;
+      try {
+        await handleRefresh();
+        return mutate<T>(method, path, body);
+      } catch {
+        throw new AuthError("Session expired. Run `freshtime setup` to re-authenticate.");
+      }
+    }
 
     if (res.status === 401) {
       throw new AuthError(responseBody);

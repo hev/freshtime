@@ -7,6 +7,7 @@ import {
 } from "../api/time-entries.ts";
 import {
   createInvoice,
+  getShareLink,
   type InvoiceLine,
   type CreateInvoiceRequest,
 } from "../api/invoices.ts";
@@ -15,6 +16,7 @@ export interface InvoiceOptions {
   rate?: string;
   currency?: string;
   dryRun?: boolean;
+  notes?: string;
 }
 
 export function buildInvoiceLines(
@@ -80,22 +82,34 @@ export async function runInvoice(
       customerid: clientId,
       create_date: today,
       lines,
-      status: 2,
+      status: 1,
+      ...(options.notes ? { notes: options.notes } : {}),
     },
   };
 
   const invoice = await createInvoice(http, config.account_id, request);
-  await markEntriesAsBilled(
-    http,
-    config.business_id,
-    entries.map((e) => e.id)
-  );
 
   const output: string[] = [];
-  output.push(`Invoice #${invoice.invoice_number} created.`);
-  output.push(`Entries:  ${entries.length}`);
+  output.push(`Invoice #${invoice.invoice_number} created (draft).`);
+  output.push(`ID:      ${invoice.invoiceid}`);
+  output.push(`Entries: ${entries.length}`);
   output.push(`Hours:   ${totalHours.toFixed(2)}`);
   output.push(`Total:   ${invoice.amount.amount} ${invoice.amount.code}`);
-  output.push(`Link:    ${invoice.links.client_view}`);
+
+  // Try to get the share link
+  const shareLink = await getShareLink(http, config.account_id, invoice.invoiceid);
+  if (shareLink) {
+    output.push(`Link:    ${shareLink}`);
+  } else {
+    output.push(`Link:    (share link unavailable — may need invoices:read scope)`);
+  }
+
+  try {
+    await markEntriesAsBilled(http, config.business_id, entries);
+    output.push(`Billed:  ${entries.length} entries marked as billed`);
+  } catch (err) {
+    output.push(`Warning: Failed to mark entries as billed — ${(err as Error).message}`);
+  }
+
   return output.join("\n");
 }

@@ -63,7 +63,7 @@ async function waitForAuthCode(): Promise<string> {
   });
 }
 
-async function exchangeCodeForToken(code: string): Promise<string> {
+async function exchangeCodeForToken(code: string): Promise<{ access_token: string; refresh_token: string }> {
   const res = await fetch("https://api.freshbooks.com/auth/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -81,8 +81,8 @@ async function exchangeCodeForToken(code: string): Promise<string> {
     throw new Error(`Token exchange failed (${res.status}): ${body}`);
   }
 
-  const data = (await res.json()) as { access_token: string };
-  return data.access_token;
+  const data = (await res.json()) as { access_token: string; refresh_token: string };
+  return { access_token: data.access_token, refresh_token: data.refresh_token };
 }
 
 export async function runSetup(): Promise<void> {
@@ -98,7 +98,7 @@ export async function runSetup(): Promise<void> {
   const code = await waitForAuthCode();
 
   console.log("Exchanging code for token...");
-  const accessToken = await exchangeCodeForToken(code);
+  const { access_token: accessToken, refresh_token: refreshToken } = await exchangeCodeForToken(code);
 
   console.log("Verifying token...");
   const http = createHttpClient(accessToken);
@@ -106,6 +106,7 @@ export async function runSetup(): Promise<void> {
 
   await saveConfig({
     access_token: accessToken,
+    refresh_token: refreshToken,
     account_id: identity.account_id,
     business_id: identity.business_id,
   });

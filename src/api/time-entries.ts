@@ -46,12 +46,19 @@ export async function listUnbilledEntries(
 export async function markEntriesAsBilled(
   http: HttpClient,
   businessId: number,
-  entryIds: number[]
+  entries: TimeEntry[]
 ): Promise<void> {
-  for (const id of entryIds) {
+  for (const entry of entries) {
     await http.put(
-      `/timetracking/business/${businessId}/time_entries/${id}`,
-      { time_entry: { billed: true } }
+      `/timetracking/business/${businessId}/time_entries/${entry.id}`,
+      {
+        time_entry: {
+          billed: true,
+          started_at: entry.started_at,
+          is_logged: true,
+          duration: entry.duration,
+        },
+      }
     );
   }
 }

@@ -84,7 +84,8 @@ program
   .option("--rate <amount>", "Override the hourly rate for this run")
   .option("--currency <code>", "Override currency code (default: config or USD)")
   .option("--dry-run", "Show what would be invoiced without creating it")
-  .action(async (clientId: string, opts: { rate?: string; currency?: string; dryRun?: boolean }) => {
+  .option("--notes <text>", "Add notes to the invoice")
+  .action(async (clientId: string, opts: { rate?: string; currency?: string; dryRun?: boolean; notes?: string }) => {
     try {
       const config = await loadConfig();
       const http = createHttpClient(config.access_token);
@@ -92,6 +93,7 @@ program
         rate: opts.rate,
         currency: opts.currency,
         dryRun: opts.dryRun,
+        notes: opts.notes,
       });
       console.log(output);
     } catch (err) {
