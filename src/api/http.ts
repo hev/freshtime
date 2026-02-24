@@ -31,7 +31,7 @@ import { loadConfig, saveConfig } from "../config.ts";
 
 const BASE_URL = "https://api.freshbooks.com";
 
-async function refreshAccessToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
+export async function refreshAccessToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
   const res = await fetch("https://api.freshbooks.com/auth/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

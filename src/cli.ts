@@ -7,6 +7,7 @@ import { runSetup } from "./commands/setup.ts";
 import { runWeekly } from "./commands/weekly.ts";
 import { runClients } from "./commands/clients.ts";
 import { runInvoice } from "./commands/invoice.ts";
+import { runRefresh } from "./commands/refresh.ts";
 import { formatTable, formatJson } from "./format.ts";
 
 const program = new Command();
@@ -102,6 +103,18 @@ program
       } else {
         console.error("Error:", (err as Error).message);
       }
+      process.exit(1);
+    }
+  });
+
+program
+  .command("refresh")
+  .description("Refresh OAuth tokens (cron-friendly: silent on success, stderr on error)")
+  .action(async () => {
+    try {
+      await runRefresh();
+    } catch (err) {
+      console.error("Error:", (err as Error).message);
       process.exit(1);
     }
   });
