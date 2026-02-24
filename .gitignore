@@ -39,3 +39,4 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Gas Town (added by gt)
 .runtime/
 .logs/
+.beads/
