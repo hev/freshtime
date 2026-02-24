@@ -7,6 +7,12 @@ import (
 	"path/filepath"
 )
 
+var (
+	Version = "dev"
+	Commit  = "unknown"
+	Date    = "unknown"
+)
+
 // Config holds the freshtime configuration.
 type Config struct {
 	AccessToken     string            `json:"access_token"`
