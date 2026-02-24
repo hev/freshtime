@@ -1,15 +1,27 @@
 # freshtime
 
-To install dependencies:
+A CLI tool for managing OAuth tokens and interacting with time-tracking APIs.
+
+## Build
 
 ```bash
-bun install
+go build -o freshtime ./cmd/freshtime
 ```
 
-To run:
+## Install
 
 ```bash
-bun run index.ts
+go install ./cmd/freshtime
 ```
 
-This project was created using `bun init` in bun v1.3.9. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+## Run
+
+```bash
+freshtime --help
+```
+
+## Test
+
+```bash
+go test ./...
+```
