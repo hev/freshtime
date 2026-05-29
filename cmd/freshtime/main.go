@@ -18,6 +18,7 @@ func main() {
 
 	root.AddCommand(commands.SetupCmd())
 	root.AddCommand(commands.WeeklyCmd())
+	root.AddCommand(commands.DailyCmd())
 	root.AddCommand(commands.ClientsCmd())
 	root.AddCommand(commands.InvoiceCmd())
 	root.AddCommand(commands.InitCmd())
