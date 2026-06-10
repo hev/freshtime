@@ -1,10 +1,5 @@
-This is a Go CLI project using [cobra](https://github.com/spf13/cobra).
+# Freshtime Claude Context
 
-- Build: `go build -o freshtime ./cmd/freshtime`
-- Test: `go test ./...`
-- Install: `go install ./cmd/freshtime`
-
-## Project Structure
-
-- `cmd/freshtime/` — Main entry point
-- `internal/` — Internal packages (api, commands, config, format)
+Freshtime is a small Cobra-based Go CLI. Keep product and design discussion
+lightweight unless the user revives the project. Engineering commands and file
+layout live in `AGENTS.md`.
