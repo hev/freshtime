@@ -9,6 +9,8 @@ import (
 type TimeEntry struct {
 	ID             int    `json:"id"`
 	ClientID       int    `json:"client_id"`
+	ProjectID      int    `json:"project_id"`
+	ServiceID      int    `json:"service_id"`
 	Duration       int    `json:"duration"` // seconds
 	StartedAt      string `json:"started_at"`
 	LocalStartedAt string `json:"local_started_at"`
@@ -90,10 +92,52 @@ type CreateTimeEntryRequest struct {
 	ClientID  int    `json:"client_id"`
 	ProjectID int    `json:"project_id,omitempty"`
 	ServiceID int    `json:"service_id,omitempty"`
-	Duration  int    `json:"duration"`  // seconds
+	Duration  int    `json:"duration"` // seconds
 	Note      string `json:"note"`
 	Billable  bool   `json:"billable"`
 	StartedAt string `json:"started_at"` // ISO 8601
+}
+
+// GetTimeEntry fetches a single time entry by ID.
+func GetTimeEntry(c *HttpClient, businessID, entryID int) (*TimeEntry, error) {
+	path := fmt.Sprintf("/timetracking/business/%d/time_entries/%d", businessID, entryID)
+	var resp struct {
+		TimeEntry TimeEntry `json:"time_entry"`
+	}
+	if err := c.Get(path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.TimeEntry, nil
+}
+
+// UpdateTimeEntry replaces a time entry's fields via the FreshBooks API.
+func UpdateTimeEntry(c *HttpClient, businessID, entryID int, entry CreateTimeEntryRequest) (*TimeEntry, error) {
+	path := fmt.Sprintf("/timetracking/business/%d/time_entries/%d", businessID, entryID)
+	body := map[string]any{
+		"time_entry": map[string]any{
+			"client_id":  entry.ClientID,
+			"project_id": entry.ProjectID,
+			"service_id": entry.ServiceID,
+			"duration":   entry.Duration,
+			"note":       entry.Note,
+			"billable":   entry.Billable,
+			"started_at": entry.StartedAt,
+			"is_logged":  true,
+		},
+	}
+	var resp struct {
+		TimeEntry TimeEntry `json:"time_entry"`
+	}
+	if err := c.Put(path, body, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.TimeEntry, nil
+}
+
+// DeleteTimeEntry deletes a time entry by ID.
+func DeleteTimeEntry(c *HttpClient, businessID, entryID int) error {
+	path := fmt.Sprintf("/timetracking/business/%d/time_entries/%d", businessID, entryID)
+	return c.Delete(path)
 }
 
 // MarkEntriesAsBilled marks each entry as billed via the API.

@@ -134,6 +134,15 @@ func (c *HttpClient) Put(path string, body any, dest any) error {
 	return c.mutate("PUT", path, body, dest)
 }
 
+// Delete performs an authenticated DELETE request.
+func (c *HttpClient) Delete(path string) error {
+	req, err := http.NewRequest("DELETE", BaseURL+path, nil)
+	if err != nil {
+		return err
+	}
+	return c.doJSON(req, nil)
+}
+
 func (c *HttpClient) mutate(method, path string, body any, dest any) error {
 	u := BaseURL + path
 	data, err := json.Marshal(body)

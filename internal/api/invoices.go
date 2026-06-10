@@ -4,11 +4,11 @@ import "fmt"
 
 // InvoiceLine represents a line item on an invoice.
 type InvoiceLine struct {
-	Type        int            `json:"type"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Qty         string         `json:"qty"`
-	UnitCost    InvoiceAmount  `json:"unit_cost"`
+	Type        int           `json:"type"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Qty         string        `json:"qty"`
+	UnitCost    InvoiceAmount `json:"unit_cost"`
 }
 
 // InvoiceAmount holds a monetary amount with currency code.

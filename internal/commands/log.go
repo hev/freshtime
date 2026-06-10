@@ -15,11 +15,12 @@ import (
 // LogCmd returns the log command.
 func LogCmd() *cobra.Command {
 	var (
-		message   string
-		duration  string
-		client    int
-		project   int
-		service   int
+		message    string
+		duration   string
+		date       string
+		client     int
+		project    int
+		service    int
 		noBillable bool
 	)
 
@@ -27,12 +28,13 @@ func LogCmd() *cobra.Command {
 		Use:   "log",
 		Short: "Log a time entry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runLog(message, duration, client, project, service, noBillable)
+			return runLog(message, duration, date, client, project, service, noBillable)
 		},
 	}
 
 	cmd.Flags().StringVarP(&message, "message", "m", "", "Note for the time entry (required)")
 	cmd.Flags().StringVarP(&duration, "duration", "d", "", "Duration (e.g. 2h, 30m, 1h30m)")
+	cmd.Flags().StringVar(&date, "date", "", "Date YYYY-MM-DD to log the entry on (default: today)")
 	cmd.Flags().IntVar(&client, "client", 0, "Client ID (overrides .freshtime.json)")
 	cmd.Flags().IntVar(&project, "project", 0, "Project ID (overrides .freshtime.json)")
 	cmd.Flags().IntVar(&service, "service", 0, "Service ID (overrides .freshtime.json)")
@@ -43,8 +45,13 @@ func LogCmd() *cobra.Command {
 	return cmd
 }
 
-func runLog(message, duration string, clientID, projectID, serviceID int, noBillable bool) error {
+func runLog(message, duration, date string, clientID, projectID, serviceID int, noBillable bool) error {
 	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+
+	startedAt, err := entryStartedAt(date, time.Now())
 	if err != nil {
 		return err
 	}
@@ -80,7 +87,7 @@ func runLog(message, duration string, clientID, projectID, serviceID int, noBill
 		Duration:  seconds,
 		Note:      message,
 		Billable:  !noBillable,
-		StartedAt: time.Now().UTC().Format("2006-01-02T15:04:05Z"),
+		StartedAt: startedAt,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create time entry: %w", err)
@@ -89,6 +96,21 @@ func runLog(message, duration string, clientID, projectID, serviceID int, noBill
 	hours := float64(seconds) / 3600
 	fmt.Printf("Logged %.2fh: %s (entry #%d)\n", hours, message, entry.ID)
 	return nil
+}
+
+// entryStartedAt resolves the started_at timestamp for a time entry. An empty
+// date means "now"; otherwise the entry is pinned to noon local time on that
+// date so it buckets onto the right day in FreshBooks regardless of timezone.
+func entryStartedAt(date string, now time.Time) (string, error) {
+	if date == "" {
+		return now.UTC().Format("2006-01-02T15:04:05Z"), nil
+	}
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return "", fmt.Errorf("invalid --date %q (expected YYYY-MM-DD)", date)
+	}
+	local := time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, time.Local)
+	return local.UTC().Format("2006-01-02T15:04:05Z"), nil
 }
 
 // parseDuration parses a human-friendly duration string like "2h", "30m", "1h30m".
