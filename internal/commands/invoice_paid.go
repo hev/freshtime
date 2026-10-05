@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,17 +16,20 @@ import (
 
 // invoiceOpenCmd lists invoices with money still outstanding.
 func invoiceOpenCmd() *cobra.Command {
-	return &cobra.Command{
+	var asJSON bool
+	cmd := &cobra.Command{
 		Use:   "open",
 		Short: "List invoices with an outstanding balance",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInvoiceOpen()
+			return runInvoiceOpen(asJSON)
 		},
 	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output as JSON")
+	return cmd
 }
 
-func runInvoiceOpen() error {
+func runInvoiceOpen(asJSON bool) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -35,14 +40,21 @@ func runInvoiceOpen() error {
 		return fmt.Errorf("failed to list invoices: %w", err)
 	}
 
+	open := make([]api.Invoice, 0, len(invoices))
+	for _, inv := range invoices {
+		if hasOutstanding(inv) && inv.V3Status != "draft" {
+			open = append(open, inv)
+		}
+	}
+	if asJSON {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(open)
+	}
+
 	fmt.Printf("%-10s %-11s %-24s %12s %12s  %s\n", "Number", "Date", "Client", "Amount", "Outstanding", "Status")
 	fmt.Println(strings.Repeat("─", 84))
-	n := 0
-	for _, inv := range invoices {
-		if !hasOutstanding(inv) || inv.V3Status == "draft" {
-			continue
-		}
-		n++
+	for _, inv := range open {
 		org := inv.Organization
 		if len(org) > 24 {
 			org = org[:24]
@@ -50,7 +62,7 @@ func runInvoiceOpen() error {
 		fmt.Printf("%-10s %-11s %-24s %12s %12s  %s\n", inv.InvoiceNumber, inv.CreateDate, org,
 			inv.Amount.Amount, inv.Outstanding.Amount, inv.V3Status)
 	}
-	if n == 0 {
+	if len(open) == 0 {
 		fmt.Println("No open invoices.")
 	}
 	return nil
