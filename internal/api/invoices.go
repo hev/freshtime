@@ -121,7 +121,7 @@ type PaymentRequest struct {
 
 // Payment is a recorded payment.
 type Payment struct {
-	PaymentID int           `json:"paymentid"`
+	PaymentID int           `json:"id"`
 	InvoiceID int           `json:"invoiceid"`
 	Amount    InvoiceAmount `json:"amount"`
 	Date      string        `json:"date"`
