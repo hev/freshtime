@@ -85,6 +85,7 @@ type Invoice struct {
 	CustomerID    int           `json:"customerid"`
 	Organization  string        `json:"organization"`
 	CreateDate    string        `json:"create_date"`
+	DueDate       string        `json:"due_date"`
 	Amount        InvoiceAmount `json:"amount"`
 	Outstanding   InvoiceAmount `json:"outstanding"`
 	PaymentStatus string        `json:"payment_status"`

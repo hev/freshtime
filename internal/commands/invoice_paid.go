@@ -52,14 +52,14 @@ func runInvoiceOpen(asJSON bool) error {
 		return enc.Encode(open)
 	}
 
-	fmt.Printf("%-10s %-11s %-24s %12s %12s  %s\n", "Number", "Date", "Client", "Amount", "Outstanding", "Status")
-	fmt.Println(strings.Repeat("─", 84))
+	fmt.Printf("%-10s %-11s %-11s %-24s %12s %12s  %s\n", "Number", "Date", "Due", "Client", "Amount", "Outstanding", "Status")
+	fmt.Println(strings.Repeat("─", 96))
 	for _, inv := range open {
 		org := inv.Organization
 		if len(org) > 24 {
 			org = org[:24]
 		}
-		fmt.Printf("%-10s %-11s %-24s %12s %12s  %s\n", inv.InvoiceNumber, inv.CreateDate, org,
+		fmt.Printf("%-10s %-11s %-11s %-24s %12s %12s  %s\n", inv.InvoiceNumber, inv.CreateDate, inv.DueDate, org,
 			inv.Amount.Amount, inv.Outstanding.Amount, inv.V3Status)
 	}
 	if len(open) == 0 {
