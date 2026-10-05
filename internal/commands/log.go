@@ -70,8 +70,8 @@ func runLog(message, duration, date string, clientID, projectID, serviceID int, 
 		}
 	}
 
-	if clientID == 0 {
-		return fmt.Errorf("no client specified. Use --client or run `freshtime init` to create .freshtime.json")
+	if clientID == 0 && projectID == 0 {
+		return fmt.Errorf("no client or project specified. Use --client, --project (internal projects have no client), or run `freshtime init` to create .freshtime.json")
 	}
 
 	seconds, err := parseDuration(duration)

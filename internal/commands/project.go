@@ -35,27 +35,31 @@ func projectCreateCmd() *cobra.Command {
 		description string
 		due         string
 		writeInit   bool
+		internal    bool
 	)
 
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create a project for a client (e.g. from a signed SOW)",
+		Short: "Create a project for a client (e.g. from a signed SOW), or an internal one with --internal",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runProjectCreate(name, client, projectType, rate, fixedPrice, budget, description, due, writeInit)
+			if internal == (client != "") {
+				return fmt.Errorf("give exactly one of --client or --internal")
+			}
+			return runProjectCreate(name, client, projectType, rate, fixedPrice, budget, description, due, writeInit, internal)
 		},
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "Project name (required)")
-	cmd.Flags().StringVar(&client, "client", "", "Client name (substring, case-insensitive) or numeric ID (required)")
+	cmd.Flags().StringVar(&client, "client", "", "Client name (substring, case-insensitive) or numeric ID")
 	cmd.Flags().StringVar(&projectType, "type", "hourly", "Billing type: hourly or fixed")
 	cmd.Flags().StringVar(&rate, "rate", "", "Hourly rate for hourly projects (e.g. 250)")
 	cmd.Flags().StringVar(&fixedPrice, "fixed-price", "", "Total price for fixed projects (e.g. 15000)")
 	cmd.Flags().StringVar(&budget, "budget", "", "Budgeted hours (e.g. 100h)")
 	cmd.Flags().StringVar(&description, "description", "", "Project description (e.g. SOW scope summary)")
 	cmd.Flags().StringVar(&due, "due", "", "Due date YYYY-MM-DD")
+	cmd.Flags().BoolVar(&internal, "internal", false, "Internal project with no client (R&D, bizdev, admin time)")
 	cmd.Flags().BoolVar(&writeInit, "init", false, "Write .freshtime.json in the current directory pointing at the new project")
 	cmd.MarkFlagRequired("name")
-	cmd.MarkFlagRequired("client")
 
 	return cmd
 }
@@ -109,29 +113,33 @@ func buildProjectRequest(name string, clientID int, projectType, rate, fixedPric
 	return req, nil
 }
 
-func runProjectCreate(name, client, projectType, rate, fixedPrice, budget, description, due string, writeInit bool) error {
+func runProjectCreate(name, client, projectType, rate, fixedPrice, budget, description, due string, writeInit, internal bool) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
 
 	http := api.NewClient(cfg)
-	clientNames, err := api.ListClients(http, cfg.AccountID)
-	if err != nil {
-		return fmt.Errorf("failed to list clients: %w", err)
-	}
-	clientID, clientName, err := resolveClient(clientNames, client)
-	if err != nil {
-		return err
-	}
-	if clientID == 0 {
-		return fmt.Errorf("--client is required")
+	clientID, clientName := 0, "internal (no client)"
+	if !internal {
+		clientNames, err := api.ListClients(http, cfg.AccountID)
+		if err != nil {
+			return fmt.Errorf("failed to list clients: %w", err)
+		}
+		clientID, clientName, err = resolveClient(clientNames, client)
+		if err != nil {
+			return err
+		}
+		if clientID == 0 {
+			return fmt.Errorf("--client is required")
+		}
 	}
 
 	req, err := buildProjectRequest(name, clientID, projectType, rate, fixedPrice, budget, description, due)
 	if err != nil {
 		return err
 	}
+	req.Internal = internal
 
 	project, err := api.CreateProject(http, cfg.BusinessID, req)
 	if err != nil {

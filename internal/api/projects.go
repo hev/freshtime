@@ -15,7 +15,8 @@ type Project struct {
 // CreateProjectRequest holds the parameters for creating a project.
 type CreateProjectRequest struct {
 	Title         string `json:"title"`
-	ClientID      int    `json:"client_id"`
+	ClientID      int    `json:"client_id,omitempty"`
+	Internal      bool   `json:"internal,omitempty"`       // no client: R&D, bizdev, admin
 	ProjectType   string `json:"project_type"`             // "hourly_rate" or "fixed_price"
 	BillingMethod string `json:"billing_method,omitempty"` // e.g. "project_rate" for hourly projects
 	Rate          string `json:"rate,omitempty"`           // hourly rate, decimal string

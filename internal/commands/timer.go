@@ -131,8 +131,8 @@ func runStart(message string, clientID, projectID, serviceID int, noBillable boo
 		}
 	}
 
-	if clientID == 0 {
-		return fmt.Errorf("no client specified. Use --client or run `freshtime init` to create .freshtime.json")
+	if clientID == 0 && projectID == 0 {
+		return fmt.Errorf("no client or project specified. Use --client, --project (internal projects have no client), or run `freshtime init` to create .freshtime.json")
 	}
 
 	ts := &TimerState{
@@ -212,7 +212,9 @@ func runTimerStatus() error {
 	if ts.Note != "" {
 		fmt.Printf("Note: %s\n", ts.Note)
 	}
-	fmt.Printf("Client: %d\n", ts.ClientID)
+	if ts.ClientID != 0 {
+		fmt.Printf("Client: %d\n", ts.ClientID)
+	}
 	if ts.ProjectID != 0 {
 		fmt.Printf("Project: %d\n", ts.ProjectID)
 	}

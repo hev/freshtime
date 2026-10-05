@@ -20,7 +20,18 @@ freshtime edit 12345 -d 1h30m                    # fix an entry
 freshtime delete 12345                           # or remove it
 freshtime weekly                                 # hours by client this week
 freshtime invoice <client-id>                    # invoice unbilled time
+freshtime invoice open                           # invoices with money outstanding
+freshtime invoice paid 0000044 --dry-run         # record a payment (full balance, today, ACH by default)
 ```
+
+Time with no client (R&D, bizdev, admin) goes on an internal project:
+
+```bash
+freshtime project create --internal --name "R&D"
+freshtime log -m "retrieval benchmark" -d 2h --project <id> --no-billable
+```
+
+`weekly` and `list` show it as "Internal".
 
 ## Build
 

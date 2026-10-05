@@ -66,18 +66,20 @@ func ListUnbilledEntries(c *HttpClient, businessID, clientID int) ([]TimeEntry, 
 // CreateTimeEntry creates a new time entry via the FreshBooks API.
 func CreateTimeEntry(c *HttpClient, businessID int, entry CreateTimeEntryRequest) (*TimeEntry, error) {
 	path := fmt.Sprintf("/timetracking/business/%d/time_entries", businessID)
-	body := map[string]any{
-		"time_entry": map[string]any{
-			"client_id":  entry.ClientID,
-			"project_id": entry.ProjectID,
-			"service_id": entry.ServiceID,
-			"duration":   entry.Duration,
-			"note":       entry.Note,
-			"billable":   entry.Billable,
-			"started_at": entry.StartedAt,
-			"is_logged":  true,
-		},
+	te := map[string]any{
+		"project_id": entry.ProjectID,
+		"service_id": entry.ServiceID,
+		"duration":   entry.Duration,
+		"note":       entry.Note,
+		"billable":   entry.Billable,
+		"started_at": entry.StartedAt,
+		"is_logged":  true,
 	}
+	// Time on an internal project has no client.
+	if entry.ClientID != 0 {
+		te["client_id"] = entry.ClientID
+	}
+	body := map[string]any{"time_entry": te}
 	var resp struct {
 		TimeEntry TimeEntry `json:"time_entry"`
 	}

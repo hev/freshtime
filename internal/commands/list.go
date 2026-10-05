@@ -86,7 +86,9 @@ func runList(days int, client string) error {
 	for _, e := range entries {
 		d, _ := entryDate(e)
 		name := clientNames[e.ClientID]
-		if name == "" {
+		if e.ClientID == 0 {
+			name = "internal"
+		} else if name == "" {
 			name = fmt.Sprintf("#%d", e.ClientID)
 		}
 		if len(name) > 18 {

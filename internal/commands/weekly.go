@@ -99,7 +99,9 @@ func buildSummary(entries []api.TimeEntry, clientNames map[int]string, weekStart
 		grandTotal += total
 
 		name := clientNames[clientID]
-		if name == "" {
+		if clientID == 0 {
+			name = "Internal"
+		} else if name == "" {
 			name = fmt.Sprintf("Client #%d", clientID)
 		}
 		clients = append(clients, format.ClientSummary{

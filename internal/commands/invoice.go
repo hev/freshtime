@@ -35,6 +35,8 @@ func InvoiceCmd() *cobra.Command {
 	cmd.Flags().StringVar(&currency, "currency", "", "Override currency code (default: config or USD)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show what would be invoiced without creating it")
 	cmd.Flags().StringVar(&notes, "notes", "", "Add notes to the invoice")
+	cmd.AddCommand(invoiceOpenCmd())
+	cmd.AddCommand(invoicePaidCmd())
 
 	return cmd
 }

@@ -1,6 +1,9 @@
 package api
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // InvoiceLine represents a line item on an invoice.
 type InvoiceLine struct {
@@ -73,4 +76,71 @@ func GetShareLink(c *HttpClient, accountID string, invoiceID int) (string, error
 		return "", err
 	}
 	return resp.Response.Result.ShareLink, nil
+}
+
+// Invoice is an existing invoice, as listed by the accounting API.
+type Invoice struct {
+	InvoiceID     int           `json:"invoiceid"`
+	InvoiceNumber string        `json:"invoice_number"`
+	CustomerID    int           `json:"customerid"`
+	Organization  string        `json:"organization"`
+	CreateDate    string        `json:"create_date"`
+	Amount        InvoiceAmount `json:"amount"`
+	Outstanding   InvoiceAmount `json:"outstanding"`
+	PaymentStatus string        `json:"payment_status"`
+	V3Status      string        `json:"v3_status"`
+}
+
+// ListInvoices fetches invoices, filtered by any search params given
+// (e.g. "search[invoice_number]").
+func ListInvoices(c *HttpClient, accountID string, params map[string]string) ([]Invoice, error) {
+	path := fmt.Sprintf("/accounting/account/%s/invoices/invoices", accountID)
+	raw, err := c.GetPaginated(path, "invoices", params)
+	if err != nil {
+		return nil, err
+	}
+	invoices := make([]Invoice, 0, len(raw))
+	for _, r := range raw {
+		var inv Invoice
+		if err := json.Unmarshal(r, &inv); err != nil {
+			continue
+		}
+		invoices = append(invoices, inv)
+	}
+	return invoices, nil
+}
+
+// PaymentRequest records money received against an invoice.
+type PaymentRequest struct {
+	InvoiceID int           `json:"invoiceid"`
+	Amount    InvoiceAmount `json:"amount"`
+	Date      string        `json:"date"` // YYYY-MM-DD
+	Type      string        `json:"type"` // e.g. "ACH", "Bank Transfer", "Check"
+	Note      string        `json:"note,omitempty"`
+}
+
+// Payment is a recorded payment.
+type Payment struct {
+	PaymentID int           `json:"paymentid"`
+	InvoiceID int           `json:"invoiceid"`
+	Amount    InvoiceAmount `json:"amount"`
+	Date      string        `json:"date"`
+	Type      string        `json:"type"`
+}
+
+// CreatePayment records a payment, which marks the invoice paid (or partial).
+func CreatePayment(c *HttpClient, accountID string, req PaymentRequest) (*Payment, error) {
+	path := fmt.Sprintf("/accounting/account/%s/payments/payments", accountID)
+	body := map[string]any{"payment": req}
+	var resp struct {
+		Response struct {
+			Result struct {
+				Payment Payment `json:"payment"`
+			} `json:"result"`
+		} `json:"response"`
+	}
+	if err := c.Post(path, body, &resp); err != nil {
+		return nil, err
+	}
+	return &resp.Response.Result.Payment, nil
 }
