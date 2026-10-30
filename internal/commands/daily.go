@@ -20,13 +20,13 @@ import (
 func DailyCmd() *cobra.Command {
 	var from, to, client string
 	var weeks int
-	var jsonOutput bool
+	var jsonOutput, billableOnly bool
 
 	cmd := &cobra.Command{
 		Use:   "daily",
 		Short: "Show per-day hours over a date range (data source for the hours wall)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDaily(from, to, client, weeks, jsonOutput)
+			return runDaily(from, to, client, weeks, jsonOutput, billableOnly)
 		},
 	}
 
@@ -35,6 +35,7 @@ func DailyCmd() *cobra.Command {
 	cmd.Flags().StringVar(&client, "client", "", "Filter by client name (substring, case-insensitive) or numeric ID")
 	cmd.Flags().IntVar(&weeks, "weeks", 53, "Weeks back from --to when --from is omitted")
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
+	cmd.Flags().BoolVar(&billableOnly, "billable", false, "Count only billable entries")
 
 	return cmd
 }
@@ -142,7 +143,7 @@ func resolveClient(clientNames map[int]string, query string) (int, string, error
 	return 0, "", fmt.Errorf("multiple clients match %q: %s", query, strings.Join(names, ", "))
 }
 
-func runDaily(from, to, client string, weeks int, jsonOutput bool) error {
+func runDaily(from, to, client string, weeks int, jsonOutput, billableOnly bool) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -170,12 +171,16 @@ func runDaily(from, to, client string, weeks int, jsonOutput bool) error {
 		return err
 	}
 
-	if clientID != 0 {
+	if clientID != 0 || billableOnly {
 		filtered := make([]api.TimeEntry, 0, len(entries))
 		for _, e := range entries {
-			if e.ClientID == clientID {
-				filtered = append(filtered, e)
+			if clientID != 0 && e.ClientID != clientID {
+				continue
 			}
+			if billableOnly && !e.Billable {
+				continue
+			}
+			filtered = append(filtered, e)
 		}
 		entries = filtered
 	}
